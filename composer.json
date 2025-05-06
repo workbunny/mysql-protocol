@@ -1,0 +1,24 @@
+{
+  "name": "workbunny/mysql-protocol",
+  "type": "library",
+  "license": "Apache-2.0",
+  "description": "The MySQL protocol implemented by PHP",
+  "authors": [
+    {
+      "name": "chaz6chez",
+      "email": "chaz6chez1993@outlook.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Workbunny\\MysqlProtocol\\": "src",
+      "Protocols\\" : "protocols"
+    }
+  },
+  "suggest": {
+    "workerman/workerman": "workerman implementation supporting the MySQL protocol"
+  }
+}

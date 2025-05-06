@@ -1,0 +1,68 @@
+<?php
+
+declare(strict_types=1);
+
+namespace nWorkbunny\MysqlProtocol\Utils;
+
+use Closure;
+use nWorkbunny\MysqlProtocol\Exceptions\PacketException;
+
+class Packet
+{
+
+    /**
+     * 新建符合Packet基础协议的binary对象
+     *
+     * @param Closure $closure = function(Binary $binary) {}
+     * @param int $packetId
+     * @return Binary
+     */
+    public static function binary(Closure $closure, int $packetId = 0): Binary
+    {
+        $binary = new Binary();
+        $binary->setWriteCursor($pos = 3);
+        $binary->writeByte($packetId);
+        $closure($binary);
+        $packetLength = $binary->getWriteCursor() - 1 - $pos;
+        $binary->setWriteCursor(0);
+        $binary->writeUB($packetLength, Binary::UB3);
+        return $binary;
+    }
+
+    /**
+     * 快速解析包头和包体
+     *
+     * @param Closure $closure
+     * @param Binary $binary
+     * @return array
+     */
+    public static function parser(Closure $closure, Binary $binary): array
+    {
+        // 重置读指针
+        $binary->setReadCursor(0);
+        // 包头
+        $packetLength = $binary->readUB(Binary::UB3);
+        $packetId = $binary->readByte();
+        $result = $closure($binary);
+        if (!is_array($result)) {
+            throw new PacketException('Error: Packet parser must return array');
+        }
+        return array_merge([
+            'packet_length' => $packetLength,
+            'packet_id' => $packetId,
+        ], $result);
+    }
+
+    /**
+     * 生成认证数据
+     *
+     * @param int $bytesCount
+     * @return array
+     * @throws \Random\RandomException
+     */
+    public static function authData(int $bytesCount = 8): array
+    {
+        $bytesCount = $bytesCount  > 21 ? 21 : max($bytesCount, 8);
+        return array_values(unpack('C*', random_bytes($bytesCount)));
+    }
+}
