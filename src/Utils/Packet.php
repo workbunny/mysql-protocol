@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace nWorkbunny\MysqlProtocol\Utils;
+namespace Workbunny\MysqlProtocol\Utils;
 
 use Closure;
-use nWorkbunny\MysqlProtocol\Exceptions\PacketException;
+use Workbunny\MysqlProtocol\Exceptions\PacketException;
 
 class Packet
 {

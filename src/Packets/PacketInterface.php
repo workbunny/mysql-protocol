@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace nWorkbunny\MysqlProtocol\Packets;
+namespace Workbunny\MysqlProtocol\Packets;
 
-use nWorkbunny\MysqlProtocol\Utils\Binary;
+use Workbunny\MysqlProtocol\Utils\Binary;
 
 interface PacketInterface
 {

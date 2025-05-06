@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Workbunny\src\Plugins;
+namespace Workbunny\MysqlProtocol\Plugins;
 
-use nWorkbunny\MysqlProtocol\Utils\Binary;
+use Workbunny\MysqlProtocol\Utils\Binary;
 
 class CachingSha2PasswordAuthPlugin extends AbstractPlugin
 {

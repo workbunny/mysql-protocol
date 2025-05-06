@@ -1,6 +1,6 @@
 <?php
 
-namespace nWorkbunny\MysqlProtocol\Utils;
+namespace Workbunny\MysqlProtocol\Utils;
 
 use InvalidArgumentException;
 use RuntimeException;

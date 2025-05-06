@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Workbunny\src\Plugins;
+namespace Workbunny\MysqlProtocol\Plugins;
 
-use;
 use Exception;
-use nWorkbunny\MysqlProtocol\Utils\Binary;
+use Workbunny\MysqlProtocol\Utils\Binary;
+
 
 abstract class AbstractPlugin
 {

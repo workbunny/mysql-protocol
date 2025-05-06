@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nWorkbunny\MysqlProtocol\Utils;
+namespace Workbunny\MysqlProtocol\Utils;
 
 use InvalidArgumentException;
 

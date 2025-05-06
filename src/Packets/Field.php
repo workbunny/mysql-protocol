@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace nWorkbunny\MysqlProtocol\Packets;
+namespace Workbunny\MysqlProtocol\Packets;
 
-use nWorkbunny\MysqlProtocol\Exceptions\PacketException;
-use nWorkbunny\MysqlProtocol\Utils\Binary;
+use Workbunny\MysqlProtocol\Exceptions\PacketException;
+use Workbunny\MysqlProtocol\Utils\Binary;
 use InvalidArgumentException;
-use nWorkbunny\MysqlProtocol\Utils\Packet;
+use Workbunny\MysqlProtocol\Utils\Packet;
 
 class Field implements PacketInterface
 {

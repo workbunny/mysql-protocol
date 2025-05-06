@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Protocols;
 
-use nWorkbunny\MysqlProtocol\Utils\Binary;
-use nWorkbunny\MysqlProtocol\Utils\Packet;
+use Workbunny\MysqlProtocol\Utils\Binary;
+use Workbunny\MysqlProtocol\Utils\Packet;
 use Workerman\Connection\ConnectionInterface;
 use Workerman\Worker;
 

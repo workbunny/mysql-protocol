@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Workbunny\src\Plugins;
+namespace Workbunny\MysqlProtocol\Plugins;
 
-use nWorkbunny\MysqlProtocol\Utils\Binary;
-use nWorkbunny\MysqlProtocol\Utils\Packet;
+use Workbunny\MysqlProtocol\Utils\Binary;
+use Workbunny\MysqlProtocol\Utils\Packet;
 
 class MySQLNativePasswordAuthPlugin extends AbstractPlugin
 {

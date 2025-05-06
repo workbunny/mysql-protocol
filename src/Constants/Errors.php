@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace nWorkbunny\MysqlProtocol\Constants;
+namespace Workbunny\MysqlProtocol\Constants;
 
 enum Errors : int
 {
