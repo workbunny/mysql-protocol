@@ -59,7 +59,7 @@ $server->onMessage = function (TcpConnection $connection, Binary $binary) {
     if ($connection->mysql_handshake_status < 1) {
         // 握手响应信息获取
         $handshakeResponse = HandshakeResponse::unpack($binary);
-
+        dump($handshakeResponse);
         // todo 可以对 数据信息进行验证，这里暂时不验证用户信息等
 
         // 状态机：1 已经握手

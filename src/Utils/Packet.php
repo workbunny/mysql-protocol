@@ -8,6 +8,10 @@ use Closure;
 use Workbunny\MysqlProtocol\Constants\ExceptionCode;
 use Workbunny\MysqlProtocol\Exceptions\Exception;
 use Workbunny\MysqlProtocol\Exceptions\PacketException;
+use Workbunny\MysqlProtocol\Packets\EOF;
+use Workbunny\MysqlProtocol\Packets\Error;
+use Workbunny\MysqlProtocol\Packets\OK;
+use Workbunny\MysqlProtocol\Packets\PacketInterface;
 
 class Packet
 {
@@ -56,10 +60,30 @@ class Packet
     }
 
     /**
+     * 根据包头获取包类型
+     *
+     * @param Binary $binary
+     * @return class-string<PacketInterface>|null
+     */
+    public static function getPacketClass(Binary $binary): ?string
+    {
+        $readCursor = $binary->getReadCursor();
+        $binary->setReadCursor(4);
+        $header = $binary->readByte();
+        $binary->setReadCursor($readCursor);
+        return match ($header) {
+            Ok::PACKET_FLAG => OK::class,
+            Error::PACKET_FLAG => Error::class,
+            EOF::PACKET_FLAG => EOF::class,
+            default => null,
+        };
+    }
+
+    /**
      * 生成认证数据
      *
      * @param int $bytesCount
-     * @return array
+     * @return array<int>
      */
     public static function authData(int $bytesCount = 8): array
     {

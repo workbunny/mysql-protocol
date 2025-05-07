@@ -18,7 +18,7 @@ class Error implements PacketInterface
      *
      * @param Binary $binary
      * @return array
-     *         - header: int 固定 0xFF
+     *         - flag: int 固定 0xFF
      *         - error_code: int
      *         - sql_state: string (5字节)
      *         - error_message: string
