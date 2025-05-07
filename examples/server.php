@@ -10,7 +10,7 @@ use Workbunny\MysqlProtocol\Packets\Command;
 use Workbunny\MysqlProtocol\Packets\Ok;
 use Workerman\Connection\TcpConnection;
 
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 $server = new \Workerman\Worker("MySQL://0.0.0.0:8844");
 $server->name = 'workbunny-mysql-server';
@@ -70,3 +70,5 @@ $server->onMessage = function (TcpConnection $connection, Binary $binary) {
         ]));
     }
 };
+
+\Workerman\Worker::runAll();
