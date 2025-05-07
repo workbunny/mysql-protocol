@@ -29,7 +29,7 @@ class AuthMoreDataRequest implements PacketInterface
      * @param Binary $binary
      * @return array 包含：
      *               - flag: int，标志字节
-     *               - extra_data: string，附加数据（可能为空）
+     *               - extra_data: array，附加数据字节组
      */
     public static function unpack(Binary $binary): array
     {
@@ -41,9 +41,9 @@ class AuthMoreDataRequest implements PacketInterface
             }
             // 如果后续有附加数据，则读取之
             $remainingLength = $binary->length() - $binary->getReadCursor();
-            $extraData = '';
+            $extraData = [];
             if ($remainingLength > 0) {
-                $extraData = Binary::BytesToString($binary->readBytes($remainingLength));
+                $extraData = $binary->readBytes($remainingLength);
             }
 
             return [
@@ -60,7 +60,7 @@ class AuthMoreDataRequest implements PacketInterface
      *   - flag: int，标志字节（默认 0x01 表示请求全认证）
      *
      * 可选键：
-     *   - extra_data: string，附加数据
+     *   - extra_data: array，附加数据
      *
      * @param array $data
      * @return Binary
@@ -69,10 +69,10 @@ class AuthMoreDataRequest implements PacketInterface
     {
         $packetId = $data['packet_id'] ?? 0;
         return Packet::binary(function (Binary $binary) use ($data) {
-            $extraData = $data['extra_data'] ?? null;
+            $extraData = $data['extra_data'] ?? [];
             $binary->writeByte(self::PACKET_FLAG);
             if ($extraData) {
-                $binary->writeBytes(Binary::StringToBytes($extraData));
+                $binary->writeBytes($extraData);
             }
         }, $packetId);
     }
