@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Workbunny\MysqlProtocol\Packets;
 
-use Workbunny\MysqlProtocol\Exceptions\PacketException;
 use Workbunny\MysqlProtocol\Utils\Binary;
 use Workbunny\MysqlProtocol\Utils\Packet;
 
@@ -25,17 +24,13 @@ class AuthMoreDataResponse implements PacketInterface
      */
     public static function unpack(Binary $binary): array
     {
-        try {
-            return Packet::parser(function (Binary $binary) {
-                $remainingLength = $binary->length() - $binary->getReadCursor();
-                $responseBytes = $binary->readBytes($remainingLength);
-                return [
-                    'auth_response' => Binary::BytesToString($responseBytes),
-                ];
-            }, $binary);
-        } catch (\InvalidArgumentException $e) {
-            throw new PacketException("Error: Failed to unpack auth more data response packet [{$e->getMessage()}]", $e->getCode(), $e);
-        }
+        return Packet::parser(function (Binary $binary) {
+            $remainingLength = $binary->length() - $binary->getReadCursor();
+            $responseBytes = $binary->readBytes($remainingLength);
+            return [
+                'auth_response' => Binary::BytesToString($responseBytes),
+            ];
+        }, $binary);
     }
 
     /**
@@ -50,13 +45,9 @@ class AuthMoreDataResponse implements PacketInterface
     public static function pack(array $data): Binary
     {
         $packetId = $data['packet_id'] ?? 0;
-        try {
-            return Packet::binary(function (Binary $binary) use ($data) {
-                $authResponse = $data['auth_response'] ?? '';
-                $binary->writeBytes(Binary::StringToBytes($authResponse));
-            }, $packetId);
-        } catch (\InvalidArgumentException $e) {
-            throw new PacketException("Error: Failed to pack auth more data response packet [{$e->getMessage()}]", $e->getCode(), $e);
-        }
+        return Packet::binary(function (Binary $binary) use ($data) {
+            $authResponse = $data['auth_response'] ?? '';
+            $binary->writeBytes(Binary::StringToBytes($authResponse));
+        }, $packetId);
     }
 }

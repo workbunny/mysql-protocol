@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Workbunny\MysqlProtocol\Utils;
 
-use InvalidArgumentException;
+use Workbunny\MysqlProtocol\Constants\ExceptionCode;
+use Workbunny\MysqlProtocol\Exceptions\InvalidArgumentException;
 
 class Charset
 {
@@ -47,7 +48,7 @@ class Charset
     public static function getCharsetNameByIndex(int $index): string
     {
         if (!isset(self::CHARSET_MAP[$index])) {
-            throw new InvalidArgumentException("Charset index '$index' is not supported.");
+            throw new InvalidArgumentException("Charset index '$index' is not supported.", ExceptionCode::ERROR_SUPPORT);
         }
         return self::CHARSET_MAP[$index];
     }
@@ -66,7 +67,7 @@ class Charset
         $lookup = array_map('strtolower', self::CHARSET_MAP);
         $index = array_search($normalized, $lookup, true);
         if ($index === false) {
-            throw new InvalidArgumentException("Charset '$name' is not supported.");
+            throw new InvalidArgumentException("Charset '$name' is not supported.", ExceptionCode::ERROR_SUPPORT);
         }
         return (int)$index;
     }

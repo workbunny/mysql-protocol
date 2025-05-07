@@ -6,6 +6,8 @@ namespace Workbunny\MysqlProtocol\Constants;
 
 enum Errors : int
 {
+    use EnumTraits;
+
     // cobar errorMessage code
     case ERR_OPEN_SOCKET = 3001;
     case ERR_CONNECT_SOCKET = 3002;

@@ -2,8 +2,8 @@
 
 namespace Workbunny\MysqlProtocol\Utils;
 
-use InvalidArgumentException;
-use RuntimeException;
+use Workbunny\MysqlProtocol\Constants\ExceptionCode;
+use Workbunny\MysqlProtocol\Exceptions\InvalidArgumentException;
 use stdClass;
 
 class Binary
@@ -71,7 +71,7 @@ class Binary
     public static function StringToBytes(string $string): array
     {
         if (($bytes = unpack('C*', $string)) === false) {
-            throw new RuntimeException("[Error Type] String '$string' is invalid");
+            throw new InvalidArgumentException("String '$string' is invalid", ExceptionCode::ERROR_TYPE);
         }
         return array_values($bytes);
     }
@@ -127,7 +127,7 @@ class Binary
                 $bytes = [];
                 foreach ($payload as $index => $byte) {
                     if (!is_int($byte) || $byte < 0 || $byte > 255) {
-                        throw new InvalidArgumentException("[Error Type] Bytes '$index'->'$byte' is invalid");
+                        throw new InvalidArgumentException("Bytes '$index'->'$byte' is invalid", ExceptionCode::ERROR_TYPE);
                     }
                     $bytes[] = $byte;
                 }
@@ -135,7 +135,7 @@ class Binary
                 break;
             default:
                 $type = gettype($payload);
-                throw new InvalidArgumentException("[Error Type] Payload type '$type' is invalid");
+                throw new InvalidArgumentException("Payload type '$type' is invalid", ExceptionCode::ERROR_TYPE);
         }
     }
 
@@ -176,7 +176,7 @@ class Binary
     public function setReadCursor(int $position): void
     {
         if ($position < 0 || $position > $this->count()) {
-            throw new InvalidArgumentException("[Error Value] Invalid cursor '$position'");
+            throw new InvalidArgumentException("Invalid cursor '$position'", ExceptionCode::ERROR_VALUE);
         }
         $this->readCursor = $position;
     }
@@ -293,7 +293,7 @@ class Binary
     public function readByte(): int
     {
         if ($this->readCursor >= $this->length()) {
-            throw new InvalidArgumentException("[Error Cursor] Read Cursor '$this->readCursor' > length of data");
+            throw new InvalidArgumentException("Read Cursor '$this->readCursor' > length of data", ExceptionCode::ERROR_CURSOR);
         }
         return $this->bytes[$this->readCursor++];
     }
@@ -307,7 +307,7 @@ class Binary
     public function readBytes(int $length): array
     {
         if ($this->readCursor + $length > $this->length()) {
-            throw new InvalidArgumentException("[Error Cursor] Read Cursor '$this->readCursor' + length '$length' > length of data");
+            throw new InvalidArgumentException("Read Cursor '$this->readCursor' + length '$length' > length of data", ExceptionCode::ERROR_CURSOR);
         }
         $readOffset = $this->readCursor;
         $this->readCursor += $length;
@@ -369,7 +369,7 @@ class Binary
     public function writeByte(int $byte): void
     {
         if ($byte < 0 || $byte > 255) {
-            throw new InvalidArgumentException("[Error Type] Byte '$byte' is invalid");
+            throw new InvalidArgumentException("Byte '$byte' is invalid", ExceptionCode::ERROR_VALUE);
         }
         $this->bytes[$this->writeCursor ++] = $byte;
     }
@@ -384,7 +384,7 @@ class Binary
         $bs = [];
         foreach ($bytes as $index => $byte) {
             if ($byte < 0 || $byte > 255) {
-                throw new InvalidArgumentException("[Error Type] Bytes '$index'->'$byte' is invalid");
+                throw new InvalidArgumentException("Bytes '$index'->'$byte' is invalid", ExceptionCode::ERROR_VALUE);
             }
             $bs[] = $byte;
         }
@@ -442,7 +442,7 @@ class Binary
             $first === 0xfc => $this->readUB(static::UB2),
             $first === 0xfd => $this->readUB(static::UB3),
             $first === 0xfe => $this->readUB(static::UB8),
-            default => throw new InvalidArgumentException("[Error Byte] Integer first tag '$first' is invalid"),
+            default => throw new InvalidArgumentException("Integer first tag '$first' is invalid", ExceptionCode::ERROR_VALUE),
         };
     }
 

@@ -6,6 +6,8 @@ namespace Workbunny\MysqlProtocol\Constants;
 
 enum Capabilities: int
 {
+    use EnumTraits;
+
     // new more secure passwords
     case CLIENT_LONG_PASSWORD = 1;
     // Found instead of affected rows

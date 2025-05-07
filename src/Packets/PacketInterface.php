@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Workbunny\MysqlProtocol\Packets;
 
+use Workbunny\MysqlProtocol\Exceptions\PacketException;
 use Workbunny\MysqlProtocol\Utils\Binary;
 
 interface PacketInterface
@@ -13,6 +14,7 @@ interface PacketInterface
      *
      * @param Binary $binary
      * @return array
+     * @throws PacketException
      */
     public static function unpack(Binary $binary): array;
 
@@ -21,6 +23,7 @@ interface PacketInterface
      *
      * @param array $data
      * @return Binary
+     * @throws PacketException
      */
     public static function pack(array $data): Binary;
 }

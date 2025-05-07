@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Workbunny\MysqlProtocol\Packets;
 
+use Workbunny\MysqlProtocol\Constants\ExceptionCode;
 use Workbunny\MysqlProtocol\Exceptions\PacketException;
 use Workbunny\MysqlProtocol\Utils\Binary;
 use Workbunny\MysqlProtocol\Utils\Packet;
@@ -32,29 +33,24 @@ class AuthMoreDataRequest implements PacketInterface
      */
     public static function unpack(Binary $binary): array
     {
-        try {
-            return Packet::parser(function (Binary $binary) {
-                // 读取第 1 个字节作为标志
-                $flag = $binary->readByte();
-                if ($flag !== self::PACKET_FLAG) {
-                    throw new PacketException("Error: Invalid packet flag '$flag', expected 0x01");
-                }
-                // 如果后续有附加数据，则读取之
-                $remainingLength = $binary->length() - $binary->getReadCursor();
-                $extraData = '';
-                if ($remainingLength > 0) {
-                    $extraData = Binary::BytesToString($binary->readBytes($remainingLength));
-                }
+        return Packet::parser(function (Binary $binary) {
+            // 读取第 1 个字节作为标志
+            $flag = $binary->readByte();
+            if ($flag !== self::PACKET_FLAG) {
+                throw new PacketException("Invalid packet flag '$flag', expected 0x01", ExceptionCode::ERROR_VALUE);
+            }
+            // 如果后续有附加数据，则读取之
+            $remainingLength = $binary->length() - $binary->getReadCursor();
+            $extraData = '';
+            if ($remainingLength > 0) {
+                $extraData = Binary::BytesToString($binary->readBytes($remainingLength));
+            }
 
-                return [
-                    'flag'          => $flag,
-                    'extra_data'    => $extraData,
-                ];
-            }, $binary);
-        } catch (\InvalidArgumentException $e) {
-            throw new PacketException("Error: Failed to unpack auth more data request packet [{$e->getMessage()}]", $e->getCode(), $e);
-        }
-
+            return [
+                'flag'          => $flag,
+                'extra_data'    => $extraData,
+            ];
+        }, $binary);
     }
 
     /**
@@ -72,17 +68,12 @@ class AuthMoreDataRequest implements PacketInterface
     public static function pack(array $data): Binary
     {
         $packetId = $data['packet_id'] ?? 0;
-
-        try {
-            return Packet::binary(function (Binary $binary) use ($data) {
-                $extraData = $data['extra_data'] ?? null;
-                $binary->writeByte(self::PACKET_FLAG);
-                if ($extraData) {
-                    $binary->writeBytes(Binary::StringToBytes($extraData));
-                }
-            }, $packetId);
-        } catch (\InvalidArgumentException $e) {
-            throw new PacketException("Error: Failed to pack auth more data request packet [{$e->getMessage()}]", $e->getCode(), $e);
-        }
+        return Packet::binary(function (Binary $binary) use ($data) {
+            $extraData = $data['extra_data'] ?? null;
+            $binary->writeByte(self::PACKET_FLAG);
+            if ($extraData) {
+                $binary->writeBytes(Binary::StringToBytes($extraData));
+            }
+        }, $packetId);
     }
 }

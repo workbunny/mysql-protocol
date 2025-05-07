@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Workbunny\MysqlProtocol\Packets;
 
-use Workbunny\MysqlProtocol\Exceptions\PacketException;
 use Workbunny\MysqlProtocol\Utils\Binary;
-use InvalidArgumentException;
+use Workbunny\MysqlProtocol\Exceptions\InvalidArgumentException;
 use Workbunny\MysqlProtocol\Utils\Packet;
 
 class Command implements PacketInterface
@@ -39,24 +38,20 @@ class Command implements PacketInterface
      */
     public static function unpack(Binary $binary): array
     {
-        try {
-            return Packet::parser(function (Binary $binary) {
+        return Packet::parser(function (Binary $binary) {
 
-                $command = $binary->readByte();
-                // 如果还包含其它数据，则读取剩余部分，并将其视为字符串
-                $remaining = $binary->length() - $binary->getReadCursor();
-                $data = null;
-                if ($remaining > 0) {
-                    $data = Binary::BytesToString($binary->readBytes($remaining));
-                }
-                return [
-                    'command' => $command,
-                    'data' => $data,
-                ];
-            }, $binary);
-        } catch (InvalidArgumentException $e) {
-            throw new PacketException("Error: Failed to unpack command packet [{$e->getMessage()}]", $e->getCode(), $e);
-        }
+            $command = $binary->readByte();
+            // 如果还包含其它数据，则读取剩余部分，并将其视为字符串
+            $remaining = $binary->length() - $binary->getReadCursor();
+            $data = null;
+            if ($remaining > 0) {
+                $data = Binary::BytesToString($binary->readBytes($remaining));
+            }
+            return [
+                'command' => $command,
+                'data' => $data,
+            ];
+        }, $binary);
     }
 
     /**
@@ -75,21 +70,16 @@ class Command implements PacketInterface
     public static function pack(array $data): Binary
     {
         $packetId = $data['packet_id'] ?? 0;
+        return Packet::binary(function (Binary $binary) use ($data) {
+            $command = $data['command'];
+            $data = $data['data'] ?? null;
+            // 写入命令码（1 字节）
+            $binary->writeByte($command);
 
-        try {
-            return Packet::binary(function (Binary $binary) use ($data) {
-                $command = $data['command'];
-                $data = $data['data'] ?? null;
-                // 写入命令码（1 字节）
-                $binary->writeByte($command);
-
-                // 如果存在额外数据，则写入（例如对于 COM_QUERY，把 SQL 语句写进来）
-                if ($data) {
-                    $binary->writeBytes(Binary::StringToBytes($data));
-                }
-            }, $packetId);
-        } catch (InvalidArgumentException $e) {
-            throw new PacketException("Error: Failed to pack command packet [{$e->getMessage()}]", $e->getCode(), $e);
-        }
+            // 如果存在额外数据，则写入（例如对于 COM_QUERY，把 SQL 语句写进来）
+            if ($data) {
+                $binary->writeBytes(Binary::StringToBytes($data));
+            }
+        }, $packetId);
     }
 }

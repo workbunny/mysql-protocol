@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Workbunny\MysqlProtocol\Utils;
 
 use Closure;
+use Workbunny\MysqlProtocol\Constants\ExceptionCode;
+use Workbunny\MysqlProtocol\Exceptions\Exception;
 use Workbunny\MysqlProtocol\Exceptions\PacketException;
 
 class Packet
@@ -45,7 +47,7 @@ class Packet
         $packetId = $binary->readByte();
         $result = $closure($binary);
         if (!is_array($result)) {
-            throw new PacketException('Error: Packet parser must return array');
+            throw new PacketException('Packet parser must return array', ExceptionCode::ERROR);
         }
         return array_merge([
             'packet_length' => $packetLength,
@@ -58,11 +60,14 @@ class Packet
      *
      * @param int $bytesCount
      * @return array
-     * @throws \Random\RandomException
      */
     public static function authData(int $bytesCount = 8): array
     {
-        $bytesCount = $bytesCount  > 21 ? 21 : max($bytesCount, 8);
-        return array_values(unpack('C*', random_bytes($bytesCount)));
+        try {
+            $bytesCount = $bytesCount  > 21 ? 21 : max($bytesCount, 8);
+            return array_values(unpack('C*', random_bytes($bytesCount)));
+        } catch (\Throwable $throwable) {
+            throw new Exception($throwable->getMessage(), ExceptionCode::ERROR, $throwable);
+        }
     }
 }
