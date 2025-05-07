@@ -2,9 +2,9 @@
 /.idea
 /.vscode
 /vendor
-/examples/*.log
 *.log
+*.pid
 .env
+composer.lock
 /tests/tmp
 /tests/.phpunit.result.cache
-composer.lock
