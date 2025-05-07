@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Workbunny\MysqlProtocol\Packets\HandshakeInitialization;
+use Workbunny\MysqlProtocol\Packets\HandshakeResponse;
 use Workbunny\MysqlProtocol\Utils\Binary;
 use Workbunny\MysqlProtocol\Utils\Packet;
 use Workbunny\MysqlProtocol\Packets\Error;
@@ -56,17 +57,20 @@ $server->onMessage = function (TcpConnection $connection, Binary $binary) {
     }
     // 状态机：0 握手阶段，1 已经握手
     if ($connection->mysql_handshake_status < 1) {
+        // 握手响应信息获取
+        $handshakeResponse = HandshakeResponse::unpack($binary);
+
         // todo 可以对 数据信息进行验证，这里暂时不验证用户信息等
-//        \Workbunny\MysqlProtocol\Packets\HandshakeResponse::unpack($binary);
 
         // 状态机：1 已经握手
         $connection->mysql_handshake_status = 1;
-        $connection->send(Ok::pack([]));
+        $connection->send(Ok::pack([
+            'packet_id' => $handshakeResponse['packet_id'] + 1
+        ]));
     } else { // command包
         $command = Command::unpack($binary);
-        dump($command);
         $connection->send(Ok::pack([
-            'packet_id' => $command['packet_id'] ?? 0,
+            'packet_id' => $command['packet_id'] + 1,
         ]));
     }
 };

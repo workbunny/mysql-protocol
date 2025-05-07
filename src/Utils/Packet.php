@@ -34,18 +34,18 @@ class Packet
     /**
      * 快速解析包头和包体
      *
-     * @param Closure $closure
+     * @param Closure|null $closure
      * @param Binary $binary
      * @return array
      */
-    public static function parser(Closure $closure, Binary $binary): array
+    public static function parser(?Closure $closure, Binary $binary): array
     {
         // 重置读指针
         $binary->setReadCursor(0);
         // 包头
         $packetLength = $binary->readUB(Binary::UB3);
         $packetId = $binary->readByte();
-        $result = $closure($binary);
+        $result = $closure ? $closure($binary) : [];
         if (!is_array($result)) {
             throw new PacketException('Packet parser must return array', ExceptionCode::ERROR);
         }
