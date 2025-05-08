@@ -117,7 +117,11 @@ class Binary
                 $this->bytes = [];
                 break;
             case is_numeric($payload):
-                $this->bytes = [(int)$payload];
+                $byte = (int)$payload;
+                if ($byte < 0 || $byte > 255) {
+                    throw new InvalidArgumentException("Payload numeric '$payload' is invalid", ExceptionCode::ERROR_TYPE);
+                }
+                $this->bytes = [];
                 break;
             case is_string($payload):
                 $this->bytes = static::StringToBytes($payload);
