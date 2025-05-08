@@ -90,11 +90,11 @@ class Error implements PacketInterface
             // 3. 写入 SQL state marker '#' 和 5 字节 SQL state
             $binary->writeByte(ord('#'));
             // 不足 5 字节则用空格补齐，多余取前 5 字节
-            $sqlState = str_pad($sqlState, 5, ' ');
+            $sqlState = str_pad((string)$sqlState, 5, ' ');
             $binary->writeBytes(Binary::StringToBytes(substr($sqlState, 0, 5)));
             // 4. 写入错误消息（剩余部分）
             if ($errorMessage) {
-                $binary->writeBytes(Binary::StringToBytes($errorMessage));
+                $binary->writeBytes(Binary::StringToBytes((string)$errorMessage));
             }
         }, $packetId);
     }

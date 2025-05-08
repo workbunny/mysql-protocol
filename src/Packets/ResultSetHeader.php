@@ -38,6 +38,6 @@ class ResultSetHeader implements PacketInterface
         return Packet::binary(function (Binary $binary) use ($data) {
             $fieldCount = (int)($data['field_count'] ?? 0);
             $binary->writeLenEncInt($fieldCount);
-        }, $data['packet_id'] ?? 0);
+        }, (int)$data['packet_id'] ?? 0);
     }
 }

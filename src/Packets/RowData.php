@@ -64,6 +64,6 @@ class RowData implements PacketInterface
                     $binary->writeLenEncString((string)$value);
                 }
             }
-        }, $data['packet_id'] ?? 0);
+        }, (int)$data['packet_id'] ?? 0);
     }
 }

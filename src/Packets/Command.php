@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Workbunny\MysqlProtocol\Packets;
 
+use Workbunny\MysqlProtocol\Constants\ExceptionCode;
+use Workbunny\MysqlProtocol\Exceptions\PacketException;
 use Workbunny\MysqlProtocol\Utils\Binary;
 use Workbunny\MysqlProtocol\Exceptions\InvalidArgumentException;
 use Workbunny\MysqlProtocol\Utils\Packet;
@@ -65,7 +67,6 @@ class Command implements PacketInterface
      *
      * @param array $data
      * @return Binary
-     * @throws InvalidArgumentException 如果缺少必要的 'command' 字段
      */
     public static function pack(array $data): Binary
     {
@@ -78,6 +79,9 @@ class Command implements PacketInterface
 
             // 如果存在额外数据，则写入（例如对于 COM_QUERY，把 SQL 语句写进来）
             if ($data) {
+                if (!is_string($data)) {
+                    throw new PacketException("Invalid data type, expected string", ExceptionCode::ERROR_TYPE);
+                }
                 $binary->writeBytes(Binary::StringToBytes($data));
             }
         }, $packetId);

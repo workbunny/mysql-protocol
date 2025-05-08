@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Workbunny\MysqlProtocol\Packets;
 
+use Workbunny\MysqlProtocol\Constants\ExceptionCode;
+use Workbunny\MysqlProtocol\Exceptions\PacketException;
 use Workbunny\MysqlProtocol\Utils\Binary;
 use Workbunny\MysqlProtocol\Utils\Packet;
 
@@ -42,6 +44,9 @@ class AuthSwitchResponse implements PacketInterface
         $packetId     = $data['packet_id'] ?? 0;
         return Packet::binary(function (Binary $binary) use ($data) {
             $authResponse = $data['auth_response'] ?? '';
+            if (!is_string($authResponse)) {
+                throw new PacketException('Invalid auth_response value, expected string', ExceptionCode::ERROR_TYPE);
+            }
             $binary->writeBytes(Binary::StringToBytes($authResponse));
         }, $packetId);
     }

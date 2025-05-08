@@ -118,13 +118,13 @@ class HandshakeInitialization implements PacketInterface
         }
         return Packet::binary(function (Binary $binary) use ($data) {
             $protocolVersion        = $data['protocol_version'] ?? 10;
-            $serverVersion          = $data['server_version'];
+            $serverVersion          = (string)$data['server_version'];
             $connectionId           = (int)$data['connection_id'];
             $capabilityFlags        = (int)$data['capability_flags'];
             $characterSetIndex      = (int)$data['character_set_index'];
             $statusFlags            = (int)$data['status_flags'];
             $authPluginData         = (array)$data['auth_plugin_data'];
-            $authPluginName         = $data['auth_plugin_name'];
+            $authPluginName         = (string)$data['auth_plugin_name'];
 
             // 认证数据长度
             if (($authPluginDataLength = count($authPluginData)) < 8) {
@@ -168,6 +168,6 @@ class HandshakeInitialization implements PacketInterface
             $binary->writeBytes($authPluginPart2);
             // 13. 写入 Auth-plugin 名称（NULL 终止字符串）
             $binary->writeNullTerminated(Binary::StringToBytes($authPluginName));
-        }, $data['packet_id'] ?? 0);
+        }, (int)$data['packet_id'] ?? 0);
     }
 }

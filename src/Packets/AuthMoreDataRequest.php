@@ -72,8 +72,11 @@ class AuthMoreDataRequest implements PacketInterface
             $extraData = $data['extra_data'] ?? [];
             $binary->writeByte(self::PACKET_FLAG);
             if ($extraData) {
+                if (!is_array($extraData)) {
+                    throw new PacketException('Invalid extra_data type, expected array', ExceptionCode::ERROR_TYPE);
+                }
                 $binary->writeBytes($extraData);
             }
-        }, $packetId);
+        }, (int)$packetId);
     }
 }

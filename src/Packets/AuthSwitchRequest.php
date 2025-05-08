@@ -60,9 +60,15 @@ class AuthSwitchRequest implements PacketInterface
             // 写入标志字节 0xFE
             $binary->writeByte(self::PACKET_FLAG);
             // 写入认证插件名称（字符串转换成字节数组）及 NULL 终止符
+            if (!is_string($pluginName)) {
+                throw new PacketException('Invalid plugin_name type, expected string', ExceptionCode::ERROR_TYPE);
+            }
             $binary->writeNullTerminated(Binary::StringToBytes($pluginName));
             // 如果附加认证数据存在，则写入
-            if ($authPluginData and is_array($authPluginData)) {
+            if ($authPluginData) {
+                if (!is_array($authPluginData)) {
+                    throw new PacketException('Invalid auth_plugin_data type, expected bytes array', ExceptionCode::ERROR_TYPE);
+                }
                 $binary->writeBytes($authPluginData);
             }
         }, $data['packet_id'] ?? 0);
