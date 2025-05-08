@@ -42,15 +42,21 @@ class Packet
      *
      * @param Closure|null $closure
      * @param Binary $binary
+     * @param bool $reset
      * @return array
      */
-    public static function parser(?Closure $closure, Binary $binary): array
+    public static function parser(?Closure $closure, Binary $binary, bool $reset = false): array
     {
+        $readCursor = $binary->getReadCursor();
         // 重置读指针
         $binary->setReadCursor(0);
         // 包头
         $packetLength = $binary->readUB(Binary::UB3);
         $packetId = $binary->readByte();
+        // 恢复读指针到原位
+        if ($reset) {
+            $binary->setReadCursor($readCursor);
+        }
         $result = $closure ? $closure($binary) : [];
         if (!is_array($result)) {
             throw new PacketException('Packet parser must return array', ExceptionCode::ERROR);
