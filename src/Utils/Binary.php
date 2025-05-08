@@ -65,7 +65,7 @@ class Binary
     /**
      * 字符串转为字节组
      *
-     * @param string $string
+     * @param string $string 二进制流/明文字符串
      * @return int[]
      */
     public static function StringToBytes(string $string): array
@@ -80,7 +80,7 @@ class Binary
      * 字节组转为字符串
      *
      * @param array $bytes
-     * @return string
+     * @return string 二进制流/明文字符串
      */
     public static function BytesToString(array $bytes): string
     {
@@ -140,14 +140,6 @@ class Binary
     }
 
     /**
-     * @return mixed
-     */
-    public function getPayload(): mixed
-    {
-        return $this->payload;
-    }
-
-    /**
      * 获取读指针的位置
      *
      * @return int
@@ -196,6 +188,14 @@ class Binary
     }
 
     /**
+     * @return mixed
+     */
+    public function payload(): mixed
+    {
+        return $this->payload;
+    }
+
+    /**
      * 将payload转换为字节数组
      *
      * @return array
@@ -213,7 +213,7 @@ class Binary
     public function pack(): string
     {
         if ($this->string === null) {
-            $this->string = pack('C*', ...$this->bytes);
+            $this->string = self::BytesToString($this->bytes);
         }
         return $this->string;
     }
