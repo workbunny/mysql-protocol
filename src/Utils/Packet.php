@@ -7,6 +7,7 @@ namespace Workbunny\MysqlProtocol\Utils;
 use Closure;
 use Workbunny\MysqlProtocol\Constants\ExceptionCode;
 use Workbunny\MysqlProtocol\Exceptions\Exception;
+use Workbunny\MysqlProtocol\Exceptions\InvalidArgumentException;
 use Workbunny\MysqlProtocol\Exceptions\PacketException;
 use Workbunny\MysqlProtocol\Packets\AuthMoreDataRequest;
 use Workbunny\MysqlProtocol\Packets\AuthSwitchRequest;
@@ -21,7 +22,7 @@ class Packet
     /**
      * 新建符合Packet基础协议的binary对象
      *
-     * @param Closure $closure = function(Binary $binary) {}
+     * @param Closure $closure = function(Binary $binary): void {}
      * @param int $packetId
      * @return Binary
      */
@@ -40,12 +41,12 @@ class Packet
     /**
      * 快速解析包头和包体
      *
-     * @param Closure|null $closure
+     * @param Closure|null $closure = function(Binary $binary): array {}
      * @param Binary $binary
-     * @param bool $reset
-     * @return array
+     * @param bool $recover 是否恢复读指针
+     * @return array{packet_length: int, packet_id: int, mixed ...$result}
      */
-    public static function parser(?Closure $closure, Binary $binary, bool $reset = false): array
+    public static function parser(?Closure $closure, Binary $binary, bool $recover = false): array
     {
         $readCursor = $binary->getReadCursor();
         // 重置读指针
@@ -54,12 +55,12 @@ class Packet
         $packetLength = $binary->readUB(Binary::UB3);
         $packetId = $binary->readByte();
         // 恢复读指针到原位
-        if ($reset) {
+        if ($recover) {
             $binary->setReadCursor($readCursor);
         }
         $result = $closure ? $closure($binary) : [];
         if (!is_array($result)) {
-            throw new PacketException('Packet parser must return array', ExceptionCode::ERROR);
+            throw new InvalidArgumentException('Packet parser must return array', ExceptionCode::ERROR_TYPE);
         }
         return array_merge([
             'packet_length' => $packetLength,
