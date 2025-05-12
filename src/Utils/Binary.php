@@ -212,11 +212,12 @@ class Binary
     /**
      * 将bytes转换为字符串形式
      *
+     * @param bool $cache
      * @return string
      */
-    public function pack(): string
+    public function pack(bool $cache = false): string
     {
-        if ($this->string === null) {
+        if ($cache and $this->string === null) {
             $this->string = self::BytesToString($this->bytes);
         }
         return $this->string;
