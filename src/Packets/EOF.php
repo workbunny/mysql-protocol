@@ -29,7 +29,7 @@ class EOF implements PacketInterface
             $result = [];
             $flag = $binary->readByte();
             if ($flag !== self::PACKET_FLAG) {
-                throw new PacketException("Invalid packet flag '$flag', expected 0x00", ExceptionCode::ERROR_VALUE);
+                throw new PacketException("Invalid packet flag '$flag', expected 0xFE", ExceptionCode::ERROR_VALUE);
             }
             $result['flag']         = $flag;
             $result['warnings']     = $binary->readUB(Binary::UB2);

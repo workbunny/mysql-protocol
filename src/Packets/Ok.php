@@ -91,9 +91,11 @@ class Ok implements PacketInterface
             // 5. 写入 warnings (2 字节)
             $binary->writeUB((int)$warnings, Binary::UB2);
             // 6. 写入 info 字符串（如果存在）
-            if ($info) {
-                $binary->writeBytes(Binary::StringToBytes((string)$info));
+            if ($info !== null && $info !== '') {
+                if (is_string($info)) {
+                    $binary->writeBytes(Binary::StringToBytes($info));
+                }
             }
-        }, (int)$data['packet_id'] ?? 0);
+        }, (int)($data['packet_id'] ?? 0));
     }
 }

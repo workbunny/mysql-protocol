@@ -85,6 +85,6 @@ class Field implements PacketInterface
             $binary->writeByte((int)($data['decimals'] ?? 0));
             // 写入 2 字节 filler
             $binary->writeBytes([0x00, 0x00]);
-        }, $data['packet_id'] ?? 0);
+        }, (int)($data['packet_id'] ?? 0));
     }
 }

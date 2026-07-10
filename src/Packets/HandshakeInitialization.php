@@ -63,8 +63,13 @@ class HandshakeInitialization implements PacketInterface
             $authPluginDataLength = $binary->readByte();
             // 11. 保留字段：10 字节
             $reserved = $binary->readBytes(10);
-            // 12. Auth-plugin-data-part2：若长度 > 8，则读取多余字节，否则为空
-            $part2Len = ($authPluginDataLength > 8) ? ($authPluginDataLength - 8) : 0;
+            // 12. Auth-plugin-data-part2：按 MySQL 协议，长度为 max(13, auth_plugin_data_length - 8)
+            //    当 auth_plugin_data_length 为 0（旧协议）时，不读取 part2
+            if ($authPluginDataLength > 0) {
+                $part2Len = max(13, $authPluginDataLength - 8);
+            } else {
+                $part2Len = 0;
+            }
             $authPluginDataPart2 = $part2Len > 0 ? $binary->readBytes($part2Len) : [];
             // 13. Auth-plugin 名称：NULL 终止字符串
             $authPluginName = Binary::BytesToString($binary->readNullTerminated());
@@ -117,7 +122,7 @@ class HandshakeInitialization implements PacketInterface
             }
         }
         return Packet::binary(function (Binary $binary) use ($data) {
-            $protocolVersion        = $data['protocol_version'] ?? 10;
+            $protocolVersion        = (int)($data['protocol_version'] ?? 10);
             $serverVersion          = (string)$data['server_version'];
             $connectionId           = (int)$data['connection_id'];
             $capabilityFlags        = (int)$data['capability_flags'];
@@ -136,8 +141,12 @@ class HandshakeInitialization implements PacketInterface
                 }
             }
             // 分割认证数据：前 8 字节为 part1，其余为 part2
+            // 按 MySQL 协议，part2 长度至少为 max(13, auth_plugin_data_length - 8)，末尾包含 NULL 填充
             $authPluginPart1 = array_slice($authPluginData, 0, 8);
-            $authPluginPart2 = $authPluginDataLength > 8 ? array_slice($authPluginData, 8) : [0];
+            $part2Data       = array_slice($authPluginData, 8);
+            $part2Len        = max(13, $authPluginDataLength - 8);
+            // 填充 part2 到所需长度（不足部分用 0 填充）
+            $authPluginPart2 = array_pad($part2Data, $part2Len, 0);
 
             $capLow  = $capabilityFlags & 0xFFFF;
             $capHigh = ($capabilityFlags >> 16) & 0xFFFF;
@@ -168,6 +177,6 @@ class HandshakeInitialization implements PacketInterface
             $binary->writeBytes($authPluginPart2);
             // 13. 写入 Auth-plugin 名称（NULL 终止字符串）
             $binary->writeNullTerminated(Binary::StringToBytes($authPluginName));
-        }, (int)$data['packet_id'] ?? 0);
+        }, (int)($data['packet_id'] ?? 0));
     }
 }

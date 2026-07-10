@@ -113,16 +113,16 @@ class HandshakeResponse implements PacketInterface
      */
     public static function pack(array $data): Binary
     {
-        $packetId = $data['packet_id'] ?? 0;
+        $packetId = (int)($data['packet_id'] ?? 0);
         return Packet::binary(function (Binary $binary) use ($data) {
-            $capabilityFlags       = (int)$data['capability_flags'] ?? 0;
-            $maxPacketSize         = (int)$data['max_packet_size'] ?? 0;
-            $characterSet          = (int)$data['character_set'] ?? 0;
-            $username              = (string)$data['username'] ?? '';
-            $database              = (string)$data['database'] ?? '';
-            $authPlugin            = (string)$data['auth_plugin'] ?? '';
-            $attributes            = (array)$data['attributes'] ?? [];
-            $authResponse          = (string)$data['auth_response'] ?? '';
+            $capabilityFlags       = (int)($data['capability_flags'] ?? 0);
+            $maxPacketSize         = (int)($data['max_packet_size'] ?? 0);
+            $characterSet          = (int)($data['character_set'] ?? 0);
+            $username              = (string)($data['username'] ?? '');
+            $database              = (string)($data['database'] ?? '');
+            $authPlugin            = (string)($data['auth_plugin'] ?? '');
+            $attributes            = (array)($data['attributes'] ?? []);
+            $authResponse          = (string)($data['auth_response'] ?? '');
             // 1. 写入能力标志（4 字节）
             $binary->writeUB($capabilityFlags, Binary::UB4);
             // 2. 写入最大数据包大小（4 字节）
@@ -135,7 +135,7 @@ class HandshakeResponse implements PacketInterface
             $binary->writeNullTerminated(Binary::StringToBytes($username));
             // 6. 写入认证响应
             if ($capabilityFlags & self::CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA) {
-                $binary->writeLenEncString($username);
+                $binary->writeLenEncString($authResponse);
             } elseif ($capabilityFlags & self::CLIENT_SECURE_CONNECTION) {
                 $len = strlen($authResponse);
                 $binary->writeByte($len);

@@ -24,11 +24,20 @@ class MySQL
      */
     public static function input(string $buffer, ConnectionInterface $connection): int
     {
+        // 最少需要 4 字节才能读取包头
+        if (strlen($buffer) < 4) {
+            return 0;
+        }
         try {
             $data = Packet::parser(function (Binary $binary) {
                 return [];
-            }, $binary = new Binary($buffer));
-            return 4 + $data['packet_length'];
+            }, $binary = new Binary(substr($buffer, 0, 4)));
+            $totalLength = 4 + $data['packet_length'];
+            // 如果缓冲区数据不足，返回 0 等待更多数据
+            if (strlen($buffer) < $totalLength) {
+                return 0;
+            }
+            return $totalLength;
         } catch (\Throwable $throwable) {
             Worker::safeEcho("Error: {$throwable->getMessage()}\n");
             $connection->close();

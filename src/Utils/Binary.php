@@ -183,10 +183,11 @@ class Binary
      */
     public function setWriteCursor(int $position): void
     {
-        if ($this->count() < $position) {
-            for ($i = $this->count(); $i < $position; $i++) {
+        if (count($this->bytes) < $position) {
+            for ($i = count($this->bytes); $i < $position; $i++) {
                 $this->bytes[] = 0;
             }
+            $this->invalidateCache();
         }
         $this->writeCursor = $position;
     }
@@ -212,30 +213,31 @@ class Binary
     /**
      * 将bytes转换为字符串形式
      *
-     * @param bool $cache
+     * @param bool $cache 是否使用缓存（缓存会在写入操作时自动失效）
      * @return string
      */
     public function pack(bool $cache = false): string
     {
-        if ($cache and $this->string === null) {
-            $this->string = self::BytesToString($this->bytes);
+        if ($cache && $this->string !== null) {
+            return $this->string;
         }
-        return $this->string;
+        $string = self::BytesToString($this->bytes);
+        if ($cache) {
+            $this->string = $string;
+        }
+        return $string;
     }
 
     /**
      * 获取二进制字符串长度
      *
-     * @param bool $cache
+     * @param bool $cache 是否使用缓存
      * @return int
      */
     public function length(bool $cache = false): int
     {
-        if (!$cache) {
-            $this->length = null;
-        }
-        if ($this->length === null) {
-            $this->length = strlen($this->pack());
+        if (!$cache || $this->length === null) {
+            $this->length = strlen($this->pack($cache));
         }
         return $this->length;
     }
@@ -243,18 +245,27 @@ class Binary
     /**
      * 获取字节数组数量
      *
-     * @param bool $cache
+     * @param bool $cache 是否使用缓存
      * @return int
      */
     public function count(bool $cache = false): int
     {
-        if (!$cache) {
-            $this->count = null;
-        }
-        if ($this->count === null) {
+        if (!$cache || $this->count === null) {
             $this->count = count($this->unpack());
         }
         return $this->count;
+    }
+
+    /**
+     * 使缓存失效，在写入操作后调用
+     *
+     * @return void
+     */
+    protected function invalidateCache(): void
+    {
+        $this->string  = null;
+        $this->length  = null;
+        $this->count   = null;
     }
 
     /**
@@ -377,6 +388,7 @@ class Binary
             throw new InvalidArgumentException("Byte '$byte' is invalid", ExceptionCode::ERROR_VALUE);
         }
         $this->bytes[$this->writeCursor ++] = $byte;
+        $this->invalidateCache();
     }
 
     /**
@@ -395,6 +407,9 @@ class Binary
         }
         foreach ($bs as $byte) {
             $this->bytes[$this->writeCursor ++] = $byte;
+        }
+        if (!empty($bs)) {
+            $this->invalidateCache();
         }
     }
 

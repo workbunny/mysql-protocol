@@ -12,7 +12,7 @@ use Workbunny\MysqlProtocol\Utils\Packet;
 
 class Command implements PacketInterface
 {
-    // 常见命令码定义
+    // 基础命令码定义
     public const COM_QUIT = 0x01;
     public const COM_INIT_DB = 0x02;
     public const COM_QUERY = 0x03;
@@ -27,6 +27,24 @@ class Command implements PacketInterface
     public const COM_PROCESS_KILL = 0x0C;
     public const COM_DEBUG = 0x0D;
     public const COM_PING = 0x0E;
+    public const COM_TIME = 0x0F;
+    public const COM_DELAYED_INSERT = 0x10;
+    public const COM_CHANGE_USER = 0x11;
+    public const COM_BINLOG_DUMP = 0x12;
+    public const COM_TABLE_DUMP = 0x13;
+    public const COM_CONNECT_OUT = 0x14;
+    public const COM_REGISTER_SLAVE = 0x15;
+    public const COM_STMT_PREPARE = 0x16;
+    public const COM_STMT_EXECUTE = 0x17;
+    public const COM_STMT_SEND_LONG_DATA = 0x18;
+    public const COM_STMT_CLOSE = 0x19;
+    public const COM_STMT_RESET = 0x1A;
+    public const COM_SET_OPTION = 0x1B;
+    public const COM_STMT_FETCH = 0x1C;
+    public const COM_DAEMON = 0x1D;
+    public const COM_BINLOG_DUMP_GTID = 0x1E;
+    public const COM_RESET_CONNECTION = 0x1F;
+    public const COM_CLONE = 0x20;
 
     /**
      * 从 Binary 对象中解析 Command Packet 数据包（payload部分，不包括 4 字节包头）。

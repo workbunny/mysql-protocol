@@ -2,77 +2,124 @@
 
 declare(strict_types=1);
 
+use Workbunny\MysqlProtocol\Constants\MySQLColumnType;
+use Workbunny\MysqlProtocol\Constants\ServerStatus;
+use Workbunny\MysqlProtocol\Packets\Command;
+use Workbunny\MysqlProtocol\Packets\EOF;
+use Workbunny\MysqlProtocol\Packets\Field;
 use Workbunny\MysqlProtocol\Packets\HandshakeInitialization;
 use Workbunny\MysqlProtocol\Packets\HandshakeResponse;
+use Workbunny\MysqlProtocol\Packets\Ok;
+use Workbunny\MysqlProtocol\Packets\ResultSetHeader;
+use Workbunny\MysqlProtocol\Packets\RowData;
 use Workbunny\MysqlProtocol\Utils\Binary;
 use Workbunny\MysqlProtocol\Utils\Packet;
-use Workbunny\MysqlProtocol\Packets\Error;
-use Workbunny\MysqlProtocol\Packets\Command;
-use Workbunny\MysqlProtocol\Packets\Ok;
 use Workerman\Connection\TcpConnection;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-$server = new \Workerman\Worker("MySQL://0.0.0.0:8844");
-$server->name = 'workbunny-mysql-server';
+$server = new \Workerman\Worker('MySQL://0.0.0.0:8844');
+$server->name = 'mysql-mock-server';
 $server->count = 2;
+
 $server->onConnect = function (TcpConnection $connection) {
-    // 构造握手包所需数据（这些数据可根据实际服务器配置、能力及认证数据来定制）
-    $handshakeData = [
-        // 通常，协议版本固定为 10
-        'protocol_version'   => 10,
-        // 服务器版本
-        'server_version'     => '8.4.3-workbunny',
-        // 连接 ID（示例值，可以自定义）
-        'connection_id'      => $connection->id,
-        // 能力标识
-        'capability_flags'   => 3758096383,
-        // 字符集索引
-        'character_set_index'=> 255,
-        // 状态标识
-        'status_flags'       => 2,
-        // 认证数据，必须至少 8 字节（示例数据）
-        'auth_plugin_data'   => Packet::authData(21),
-        // 认证插件名称（MySQL 8 默认认证插件通常是 caching_sha2_password）
-        'auth_plugin_name'   => 'caching_sha2_password'
-    ];
-    // 生成握手包的 Binary 对象
-    $binary = HandshakeInitialization::pack($handshakeData);
-    // 握手状态机
-    $connection->mysql_handshake_status = 0;
-    $connection->send($binary);
+    echo "\n[CONNECT] {$connection->getRemoteAddress()}\n";
+    $connection->send(HandshakeInitialization::pack([
+        'protocol_version'    => 10,
+        'server_version'      => '8.4.3-workbunny-mock',
+        'connection_id'       => $connection->id,
+        'capability_flags'    => 0x807FFFFF,
+        'character_set_index' => 255,
+        'status_flags'        => ServerStatus::SERVER_STATUS_AUTOCOMMIT,
+        'auth_plugin_data'    => Packet::authData(21),
+        'auth_plugin_name'    => HandshakeInitialization::AUTH_PLUGIN_mysql_NATIVE_PLUGIN,
+    ]));
+    $connection->mysqlState = 0;
 };
 
 $server->onMessage = function (TcpConnection $connection, Binary $binary) {
-    // 友好打印
-    dump($binary->dump());
-    // 判断状态机
-    if (!isset($connection->mysql_handshake_status)) {
-        $connection->close(Error::pack([
-            'error_code' => 0,
-            'sql_state'  => 'HY000',
-            'message'    => 'Invalid connection.',
-        ]));
+    if (!isset($connection->mysqlState)) {
+        $connection->close();
         return;
     }
-    // 状态机：0 握手阶段，1 已经握手
-    if ($connection->mysql_handshake_status < 1) {
-        // 握手响应信息获取
-        $handshakeResponse = HandshakeResponse::unpack($binary);
-        dump($handshakeResponse);
-        // todo 可以对 数据信息进行验证，这里暂时不验证用户信息等
-
-        // 状态机：1 已经握手
-        $connection->mysql_handshake_status = 1;
+    if ($connection->mysqlState < 1) {
+        $resp = HandshakeResponse::unpack($binary);
+        echo "[HANDSHAKE] User: {$resp['username']}\n";
         $connection->send(Ok::pack([
-            'packet_id' => $handshakeResponse['packet_id'] + 1
+            'packet_id'    => ($resp['packet_id'] + 1) & 0xFF,
+            'status_flags' => ServerStatus::SERVER_STATUS_AUTOCOMMIT,
         ]));
-    } else { // command包
-        $command = Command::unpack($binary);
-        $connection->send(Ok::pack([
-            'packet_id' => $command['packet_id'] + 1,
-        ]));
+        $connection->mysqlState = 1;
+        echo "[HANDSHAKE] Authenticated\n";
+        return;
+    }
+    $cmd     = Command::unpack($binary);
+    $nextId  = ($cmd['packet_id'] + 1) & 0xFF;
+    $okFlags = ['packet_id' => $nextId, 'status_flags' => ServerStatus::SERVER_STATUS_AUTOCOMMIT];
+    switch ($cmd['command']) {
+        case Command::COM_QUIT:
+            echo "[CMD] COM_QUIT\n";
+            $connection->close();
+            break;
+        case Command::COM_PING:
+            echo "[CMD] COM_PING\n";
+            $connection->send(Ok::pack($okFlags));
+            break;
+        case Command::COM_INIT_DB:
+            echo "[CMD] COM_INIT_DB: {$cmd['data']}\n";
+            $connection->send(Ok::pack($okFlags));
+            break;
+        case Command::COM_FIELD_LIST:
+            $connection->send(EOF::pack($okFlags));
+            break;
+        case Command::COM_QUERY:
+            $sql = trim($cmd['data'] ?? '');
+            echo "[CMD] COM_QUERY: {$sql}\n";
+            handleQuery($connection, $nextId, $sql);
+            break;
+        default:
+            $connection->send(Ok::pack($okFlags));
+            break;
     }
 };
 
+$server->onClose = function (TcpConnection $connection) {
+    echo "[DISCONNECT] Client closed\n";
+};
+
 \Workerman\Worker::runAll();
+
+function handleQuery(TcpConnection $conn, int $nextId, string $sql): void
+{
+    $sqlUpper = strtoupper(trim($sql));
+    if (preg_match('/^SELECT\s+1\s+AS\s+(\w+)/i', $sql, $m)) {
+        $colName = $m[1];
+        $conn->send(ResultSetHeader::pack(['packet_id' => $nextId++, 'field_count' => 1]));
+        $conn->send(Field::pack([
+            'packet_id'     => $nextId++,
+            'catalog'       => 'def',
+            'name'          => $colName,
+            'org_name'      => $colName,
+            'character_set' => 63,
+            'column_length' => 1,
+            'type'          => MySQLColumnType::MYSQL_TYPE_LONGLONG,
+        ]));
+        $conn->send(EOF::pack(['packet_id' => $nextId++, 'status_flags' => ServerStatus::SERVER_STATUS_AUTOCOMMIT]));
+        $conn->send(RowData::pack(['packet_id' => $nextId++, 'values' => ['1']]));
+        $conn->send(EOF::pack(['packet_id' => $nextId++, 'status_flags' => ServerStatus::SERVER_STATUS_AUTOCOMMIT]));
+        echo "[QUERY] 1 row in set\n";
+        return;
+    }
+    if (str_starts_with($sqlUpper, 'SELECT') || str_starts_with($sqlUpper, 'SHOW')) {
+        $conn->send(ResultSetHeader::pack(['packet_id' => $nextId++, 'field_count' => 0]));
+        $conn->send(EOF::pack(['packet_id' => $nextId++, 'status_flags' => ServerStatus::SERVER_STATUS_AUTOCOMMIT]));
+        echo "[QUERY] Empty set\n";
+        return;
+    }
+    $conn->send(Ok::pack([
+        'packet_id'      => $nextId,
+        'affected_rows'  => 1,
+        'status_flags'   => ServerStatus::SERVER_STATUS_AUTOCOMMIT,
+    ]));
+    echo "[QUERY] OK, 1 row affected\n";
+}

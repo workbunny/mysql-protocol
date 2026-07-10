@@ -15,6 +15,7 @@ use Workbunny\MysqlProtocol\Packets\EOF;
 use Workbunny\MysqlProtocol\Packets\Error;
 use Workbunny\MysqlProtocol\Packets\OK;
 use Workbunny\MysqlProtocol\Packets\PacketInterface;
+use Workbunny\MysqlProtocol\Packets\ResultSetHeader;
 
 class Packet
 {
@@ -97,6 +98,10 @@ class Packet
             // AuthSwitchRequest 包体长度通常大于9字节，且flag为0xFE
             $header === AuthSwitchRequest::PACKET_FLAG => AuthSwitchRequest::class,
             $header === AuthMoreDataRequest::PACKET_FLAG => AuthMoreDataRequest::class,
+            // ResultSetHeader: flag 为 0x01-0xFA (field count)
+            // 当第一个字节是1~250时，且不是0x00(OK)、0xFF(Error)、0xFE(EOF/AuthSwitch)、0xFB(NULL)
+            // 则可能是结果集头（字段数）
+            $header > 0 and $header < 0xFB => ResultSetHeader::class,
             // 如果传入自定义解析函数，则使用
             default => $closure ? $closure($binary) : null,
         };

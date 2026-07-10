@@ -83,7 +83,7 @@ class Error implements PacketInterface
             $errorCode             = $data['error_code'] ?? 0;
             $sqlState              = $data['sql_state'] ?? 'HY000';
             $errorMessage          = $data['error_message'] ?? null;
-            // 1. 写入 OK 包头 0x00
+            // 1. 写入 ERROR 包头 0xFF
             $binary->writeByte(self::PACKET_FLAG);
             // 2. 写入 error code，2 字节 little-endian
             $binary->writeUB((int)$errorCode, Binary::UB2);

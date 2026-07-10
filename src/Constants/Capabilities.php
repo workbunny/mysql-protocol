@@ -47,5 +47,19 @@ enum Capabilities: int
     case CLIENT_PLUGIN_AUTH = 524288;
     case CLIENT_CONNECT_ATTRS = 1048576;
     case CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA = 2097152;
+    // Can handle server state change information
+    case CLIENT_SESSION_TRACK = 4194304;
+    // Client no longer expects EOF packets; OK packets replace them
+    case CLIENT_DEPRECATE_EOF = 16777216;
+    // Verify server certificate
+    case CLIENT_SSL_VERIFY_SERVER_CERT = 1073741824;
+    // Don't emit a progress event for file uploads
+    case CLIENT_OPTIONAL_RESULTSET_METADATA = 536870912;
+    // Client supports ZSTD compression algorithm
+    case CLIENT_ZSTD_COMPRESSION_ALGORITHM = 268435456;
+    // Client can handle multi-results from stored procedures
+    case CLIENT_QUERY_ATTRIBUTES = 134217728;
+    // Client supports multi factor authentication
+    case MULTI_FACTOR_AUTHENTICATION = 67108864;
 }
 
