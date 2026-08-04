@@ -103,4 +103,60 @@ class PacketTest extends TestCase
         $data = Packet::authData(100);
         $this->assertCount(21, $data);
     }
+
+    // ── getPacketClass boundary tests ─────────────────────
+
+    public function testGetPacketClassAuthSwitchVsEOF(): void
+    {
+        // EOF: packetLength < 9, flag = 0xFE
+        $eof = Packet::binary(function (Binary $binary) {
+            $binary->writeByte(0xFE);
+            $binary->writeUB(0, Binary::UB2);
+            $binary->writeUB(0, Binary::UB2);
+        }, 0);
+        $this->assertSame(\Workbunny\MysqlProtocol\Packets\EOF::class, Packet::getPacketClass($eof));
+
+        // AuthSwitchRequest: packetLength >= 9, flag = 0xFE
+        $authSwitch = Packet::binary(function (Binary $binary) {
+            $binary->writeByte(0xFE);
+            $binary->writeNullTerminated(Binary::StringToBytes('caching_sha2_password'));
+            $binary->writeBytes([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        }, 0);
+        $this->assertSame(\Workbunny\MysqlProtocol\Packets\AuthSwitchRequest::class, Packet::getPacketClass($authSwitch));
+    }
+
+    public function testGetPacketClassResultSetHeader(): void
+    {
+        $rs = Packet::binary(function (Binary $binary) {
+            $binary->writeLenEncInt(5);
+        }, 1);
+        $this->assertSame(\Workbunny\MysqlProtocol\Packets\ResultSetHeader::class, Packet::getPacketClass($rs));
+    }
+
+    public function testGetPacketClassUnknown(): void
+    {
+        $unknown = Packet::binary(function (Binary $binary) {
+            $binary->writeByte(0xFC);
+        }, 0);
+        $this->assertNull(Packet::getPacketClass($unknown));
+    }
+
+    public function testParserRecover(): void
+    {
+        $binary = Packet::binary(function (Binary $binary) {
+            $binary->writeByte(0x41);
+            $binary->writeByte(0x42);
+        }, 3);
+        // packet structure: [len:3][id:1][0x41][0x42] = 6 bytes
+        // parser internally resets cursor to 0, reads header (4 bytes), then reads body
+        // After body read, cursor = 6
+        // Set cursor to 4 (start of body) to verify recover
+        $binary->setReadCursor(4);
+        $result = Packet::parser(function (Binary $binary) {
+            return ['byte' => $binary->readByte()];
+        }, $binary, true);
+        $this->assertSame(0x41, $result['byte']);
+        // recover 恢复的是包头读取前的指针位置，闭包内 readByte 会正常推进指针
+        $this->assertSame(5, $binary->getReadCursor());
+    }
 }

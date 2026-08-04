@@ -71,6 +71,6 @@ class AuthSwitchRequest implements PacketInterface
                 }
                 $binary->writeBytes($authPluginData);
             }
-        }, $data['packet_id'] ?? 0);
+        }, (int)($data['packet_id'] ?? 0));
     }
 }

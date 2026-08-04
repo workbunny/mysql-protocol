@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Workbunny\MysqlProtocol\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Workbunny\MysqlProtocol\Packets\AuthMoreDataRequest;
+use Workbunny\MysqlProtocol\Packets\AuthMoreDataResponse;
 use Workbunny\MysqlProtocol\Packets\AuthSwitchRequest;
 use Workbunny\MysqlProtocol\Packets\AuthSwitchResponse;
 use Workbunny\MysqlProtocol\Packets\BinlogDump;
@@ -411,5 +413,141 @@ class PacketRoundTripTest extends TestCase
         $binary = StmtExecute::pack($data);
         $result = StmtExecute::unpack($binary);
         $this->assertSame($data['stmt_id'], $result['stmt_id']);
+    }
+
+    // ── AuthMoreData ──────────────────────────────────────
+
+    public function testAuthMoreDataRequestRoundTrip(): void
+    {
+        $data = [
+            'packet_id'  => 4,
+            'extra_data' => [0x01, 0x02, 0x03],
+        ];
+        $binary = AuthMoreDataRequest::pack($data);
+        $result = AuthMoreDataRequest::unpack($binary);
+        $this->assertSame($data['packet_id'], $result['packet_id']);
+        $this->assertSame($data['extra_data'], $result['extra_data']);
+    }
+
+    public function testAuthMoreDataResponseRoundTrip(): void
+    {
+        $data = [
+            'packet_id'     => 5,
+            'auth_response' => str_repeat("\x01\x02\x03\x04", 50),
+        ];
+        $binary = AuthMoreDataResponse::pack($data);
+        $result = AuthMoreDataResponse::unpack($binary);
+        $this->assertSame($data['packet_id'], $result['packet_id']);
+        $this->assertSame($data['auth_response'], $result['auth_response']);
+    }
+
+    // ── HandshakeResponse with CLIENT_CONNECT_ATTRS ───────
+
+    public function testHandshakeResponseWithAttrs(): void
+    {
+        $data = [
+            'packet_id'        => 1,
+            'capability_flags' => HandshakeResponse::CLIENT_PROTOCOL_41
+                                | HandshakeResponse::CLIENT_SECURE_CONNECTION
+                                | HandshakeResponse::CLIENT_PLUGIN_AUTH
+                                | HandshakeResponse::CLIENT_CONNECT_ATTRS,
+            'max_packet_size'  => 16777216,
+            'character_set'    => 33,
+            'username'         => 'root',
+            'auth_response'    => 'auth_data',
+            'auth_plugin'      => 'mysql_native_password',
+            'attributes'       => [
+                '_client_name' => 'mysql-protocol',
+                '_client_version' => '1.0.0',
+            ],
+        ];
+        $binary = HandshakeResponse::pack($data);
+        $result = HandshakeResponse::unpack($binary);
+        $this->assertSame($data['capability_flags'], $result['capability_flags']);
+        $this->assertSame($data['username'], $result['username']);
+        $this->assertSame($data['attributes'], $result['attributes']);
+    }
+
+    // ── HandshakeResponse with non-ASCII auth_response ───
+
+    public function testHandshakeResponseBinaryAuthResponse(): void
+    {
+        $authResponse = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13";
+        $data = [
+            'packet_id'        => 1,
+            'capability_flags' => HandshakeResponse::CLIENT_PROTOCOL_41
+                                | HandshakeResponse::CLIENT_SECURE_CONNECTION,
+            'max_packet_size'  => 16777216,
+            'character_set'    => 33,
+            'username'         => 'root',
+            'auth_response'    => $authResponse,
+        ];
+        $binary = HandshakeResponse::pack($data);
+        $result = HandshakeResponse::unpack($binary);
+        $this->assertSame($authResponse, $result['auth_response']);
+    }
+
+    // ── BinlogDumpGTID with multiple GTID sets ────────────
+
+    public function testBinlogDumpGTIDMultipleSets(): void
+    {
+        $data = [
+            'packet_id'       => 0,
+            'flags'           => 0,
+            'server_id'       => 100,
+            'binlog_filename' => 'mysql-bin.000003',
+            'binlog_pos'      => 120,
+            'gtid_sets'       => [
+                [
+                    'sid'       => 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+                    'intervals' => [['start' => 1, 'end' => 50]],
+                ],
+                [
+                    'sid'       => '11111111-2222-3333-4444-555555555555',
+                    'intervals' => [
+                        ['start' => 1, 'end' => 10],
+                        ['start' => 20, 'end' => 30],
+                    ],
+                ],
+            ],
+        ];
+        $binary = BinlogDumpGTID::pack($data);
+        $result = BinlogDumpGTID::unpack($binary);
+        $this->assertCount(2, $result['gtid_sets']);
+        $this->assertSame($data['gtid_sets'][0]['sid'], $result['gtid_sets'][0]['sid']);
+        $this->assertSame($data['gtid_sets'][1]['sid'], $result['gtid_sets'][1]['sid']);
+        $this->assertCount(1, $result['gtid_sets'][0]['intervals']);
+        $this->assertCount(2, $result['gtid_sets'][1]['intervals']);
+    }
+
+    // ── Error boundary tests ──────────────────────────────
+
+    public function testErrorRoundTripEmptyMessage(): void
+    {
+        $data = [
+            'packet_id'     => 1,
+            'error_code'    => 1000,
+            'error_message' => '',
+        ];
+        $binary = Error::pack($data);
+        $result = Error::unpack($binary);
+        $this->assertSame($data['error_code'], $result['error_code']);
+        $this->assertSame($data['error_message'], $result['error_message']);
+    }
+
+    // ── Ok with large affected_rows ───────────────────────
+
+    public function testOkLargeAffectedRows(): void
+    {
+        $data = [
+            'packet_id'      => 1,
+            'affected_rows'  => 999999,
+            'last_insert_id' => 0,
+            'status_flags'   => 2,
+            'warnings'       => 0,
+        ];
+        $binary = Ok::pack($data);
+        $result = Ok::unpack($binary);
+        $this->assertSame($data['affected_rows'], $result['affected_rows']);
     }
 }

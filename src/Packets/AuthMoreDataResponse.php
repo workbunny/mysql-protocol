@@ -46,13 +46,13 @@ class AuthMoreDataResponse implements PacketInterface
      */
     public static function pack(array $data): Binary
     {
-        $packetId = $data['packet_id'] ?? 0;
+        $packetId = (int)($data['packet_id'] ?? 0);
         return Packet::binary(function (Binary $binary) use ($data) {
             $authResponse = $data['auth_response'] ?? '';
             if (!is_string($authResponse)) {
                 throw new PacketException('Invalid auth_response type, expected string', ExceptionCode::ERROR_TYPE);
             }
             $binary->writeBytes(Binary::StringToBytes($authResponse));
-        }, (int)$packetId);
+        }, $packetId);
     }
 }

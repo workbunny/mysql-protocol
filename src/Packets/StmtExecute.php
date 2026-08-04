@@ -46,6 +46,9 @@ class StmtExecute implements PacketInterface
     {
         return Packet::parser(function (Binary $binary) {
             $command        = $binary->readByte();
+            if ($command !== self::COMMAND) {
+                throw new PacketException("Invalid command '$command', expected 0x17", ExceptionCode::ERROR_VALUE);
+            }
             $stmtId         = $binary->readUB(Binary::UB4);
             $flags          = $binary->readByte();
             $iterationCount = $binary->readUB(Binary::UB4);

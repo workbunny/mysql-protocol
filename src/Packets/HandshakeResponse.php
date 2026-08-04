@@ -137,9 +137,10 @@ class HandshakeResponse implements PacketInterface
             if ($capabilityFlags & self::CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA) {
                 $binary->writeLenEncString($authResponse);
             } elseif ($capabilityFlags & self::CLIENT_SECURE_CONNECTION) {
-                $len = strlen($authResponse);
+                $authBytes = Binary::StringToBytes($authResponse);
+                $len = count($authBytes);
                 $binary->writeByte($len);
-                $binary->writeBytes(Binary::StringToBytes($authResponse));
+                $binary->writeBytes($authBytes);
             } else {
                 $binary->writeNullTerminated(Binary::StringToBytes($authResponse));
             }
